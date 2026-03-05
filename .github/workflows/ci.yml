@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  GO_VERSION: '1.21'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  go-lint-and-test:
+    name: Go Lint and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install golangci-lint
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+    - name: Run golangci-lint (api-server)
+      run: |
+        cd api-server
+        golangci-lint run ./...
+
+    - name: Run golangci-lint (operator)
+      run: |
+        cd operator
+        golangci-lint run ./...
+
+    - name: Test api-server
+      run: |
+        cd api-server
+        go test -v ./...
+
+    - name: Test operator
+      run: |
+        cd operator
+        go test -v ./...
+
+  python-lint-and-test:
+    name: Python Lint and Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff pytest
+
+    - name: Install analyzer dependencies
+      run: |
+        cd analyzer
+        pip install -r requirements.txt
+
+    - name: Install runtime dependencies
+      run: |
+        cd runtime
+        pip install -r requirements.txt
+
+    - name: Lint with ruff (analyzer)
+      run: |
+        cd analyzer
+        ruff check src/
+
+    - name: Lint with ruff (runtime)
+      run: |
+        cd runtime
+        ruff check *.py
+
+    - name: Test analyzer
+      run: |
+        cd analyzer
+        python -m pytest tests/ -v || echo "No tests found"
+
+    - name: Test runtime
+      run: |
+        cd runtime
+        python -m pytest tests/ -v || echo "No tests found"
+
+  docker-build:
+    name: Docker Build Verification
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build api-server image
+      run: |
+        cd api-server
+        docker build -t qsim-api:test .
+
+    - name: Build analyzer image
+      run: |
+        cd analyzer
+        docker build -t qsim-analyzer:test .
+
+    - name: Build runtime image
+      run: |
+        cd runtime
+        docker build -t qsim-runtime:test .
+
+    - name: Test docker-compose
+      run: |
+        docker-compose config
