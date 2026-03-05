@@ -4,13 +4,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	"github.com/mungch0120/qsim-cluster/api-server/internal/analyzer"
 	"github.com/mungch0120/qsim-cluster/api-server/internal/api/handlers"
 	"github.com/mungch0120/qsim-cluster/api-server/internal/api/middleware"
+	"github.com/mungch0120/qsim-cluster/api-server/internal/k8s"
 	"github.com/mungch0120/qsim-cluster/api-server/internal/store"
 )
 
 // NewRouter creates and configures the API router
-func NewRouter(stores *store.Stores, logger *zap.Logger) *gin.Engine {
+func NewRouter(stores *store.Stores, k8sClient *k8s.Client, analyzerClient *analyzer.Client, logger *zap.Logger) *gin.Engine {
 	if gin.Mode() == gin.ReleaseMode {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -34,9 +36,9 @@ func NewRouter(stores *store.Stores, logger *zap.Logger) *gin.Engine {
 	v1 := router.Group("/api/v1")
 	{
 		// Initialize handlers
-		jobHandler := handlers.NewJobHandler(stores, logger)
-		clusterHandler := handlers.NewClusterHandler(stores, logger)
-		analysisHandler := handlers.NewAnalysisHandler(stores, logger)
+		jobHandler := handlers.NewJobHandler(stores, k8sClient, analyzerClient, logger)
+		clusterHandler := handlers.NewClusterHandler(stores, k8sClient, logger)
+		analysisHandler := handlers.NewAnalysisHandler(stores, analyzerClient, logger)
 
 		// Job management routes
 		jobs := v1.Group("/jobs")

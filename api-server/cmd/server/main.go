@@ -14,7 +14,9 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
+	"github.com/mungch0120/qsim-cluster/api-server/internal/analyzer"
 	"github.com/mungch0120/qsim-cluster/api-server/internal/api"
+	"github.com/mungch0120/qsim-cluster/api-server/internal/k8s"
 	"github.com/mungch0120/qsim-cluster/api-server/internal/store"
 )
 
@@ -39,6 +41,8 @@ func main() {
 	rootCmd.Flags().String("postgres-url", "", "PostgreSQL connection string")
 	rootCmd.Flags().String("redis-url", "", "Redis connection string")
 	rootCmd.Flags().String("analyzer-url", "", "Circuit analyzer service URL")
+	rootCmd.Flags().String("kubeconfig", "", "path to kubeconfig file")
+	rootCmd.Flags().Bool("in-cluster", false, "use in-cluster Kubernetes configuration")
 
 	viper.BindPFlags(rootCmd.Flags())
 
@@ -69,8 +73,17 @@ func runServer(cmd *cobra.Command, args []string) {
 		logger.Fatal("Failed to initialize stores", zap.Error(err))
 	}
 
+	// Initialize Kubernetes client
+	k8sClient, err := initK8sClient(logger)
+	if err != nil {
+		logger.Fatal("Failed to initialize Kubernetes client", zap.Error(err))
+	}
+
+	// Initialize analyzer client
+	analyzerClient := initAnalyzerClient(logger)
+
 	// Initialize API router
-	router := api.NewRouter(stores, logger)
+	router := api.NewRouter(stores, k8sClient, analyzerClient, logger)
 
 	// Create HTTP server
 	port := viper.GetString("port")
@@ -131,6 +144,7 @@ func initConfig() {
 	viper.SetDefault("postgres-url", "postgres://localhost:5432/qsim?sslmode=disable")
 	viper.SetDefault("redis-url", "redis://localhost:6379/0")
 	viper.SetDefault("analyzer-url", "http://localhost:8081")
+	viper.SetDefault("in-cluster", false)
 }
 
 func initLogger() *zap.Logger {
@@ -176,4 +190,49 @@ func initStores(logger *zap.Logger) (*store.Stores, error) {
 	}
 
 	return stores, nil
+}
+
+func initK8sClient(logger *zap.Logger) (*k8s.Client, error) {
+	kubeconfig := viper.GetString("kubeconfig")
+	inCluster := viper.GetBool("in-cluster")
+
+	config := k8s.Config{
+		KubeConfig: kubeconfig,
+		InCluster:  inCluster,
+	}
+
+	client, err := k8s.NewClient(config, logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize Kubernetes client: %w", err)
+	}
+
+	return client, nil
+}
+
+func initAnalyzerClient(logger *zap.Logger) *analyzer.Client {
+	analyzerURL := viper.GetString("analyzer-url")
+
+	config := analyzer.Config{
+		BaseURL: analyzerURL,
+		Timeout: 30 * time.Second,
+	}
+
+	client := analyzer.NewClient(config, logger)
+
+	// Test connectivity (non-blocking)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := client.Health(ctx); err != nil {
+			logger.Warn("Analyzer service health check failed", 
+				zap.String("url", analyzerURL),
+				zap.Error(err),
+			)
+		} else {
+			logger.Info("Analyzer service is healthy", zap.String("url", analyzerURL))
+		}
+	}()
+
+	return client
 }
