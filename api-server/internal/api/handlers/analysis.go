@@ -1,23 +1,27 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	"github.com/mungch0120/qsim-cluster/api-server/internal/analyzer"
 	"github.com/mungch0120/qsim-cluster/api-server/internal/store"
 )
 
 type AnalysisHandler struct {
-	stores *store.Stores
-	logger *zap.Logger
+	stores         *store.Stores
+	analyzerClient *analyzer.Client
+	logger         *zap.Logger
 }
 
-func NewAnalysisHandler(stores *store.Stores, logger *zap.Logger) *AnalysisHandler {
+func NewAnalysisHandler(stores *store.Stores, analyzerClient *analyzer.Client, logger *zap.Logger) *AnalysisHandler {
 	return &AnalysisHandler{
-		stores: stores,
-		logger: logger,
+		stores:         stores,
+		analyzerClient: analyzerClient,
+		logger:         logger,
 	}
 }
 
@@ -55,63 +59,53 @@ func (h *AnalysisHandler) AnalyzeCircuit(c *gin.Context) {
 		return
 	}
 
+	// Set default language if not specified
+	if req.Language == "" {
+		req.Language = "python"
+	}
+
 	h.logger.Info("Analyzing circuit",
 		zap.String("language", req.Language),
 		zap.Int("code_length", len(req.Code)),
 	)
 
-	// TODO: Call circuit analyzer service
-	// For now, return a mock analysis based on code length
-	
-	// Simple heuristic based on code length (placeholder)
-	codeLength := len(req.Code)
-	var analysis AnalyzeCircuitResponse
-	
-	if codeLength < 200 {
-		analysis = AnalyzeCircuitResponse{
-			Qubits:              3,
-			Depth:               5,
-			GateCount:          10,
-			CXCount:            3,
-			Parallelism:        0.6,
-			MemoryBytes:        128,
-			ComplexityClass:    "A",
-			RecommendedMethod:  "statevector",
-			EstimatedCPU:       1,
-			EstimatedMemoryMB:  512,
-			EstimatedTimeSec:   5,
-			RecommendedPool:    "cpu",
-		}
-	} else if codeLength < 500 {
-		analysis = AnalyzeCircuitResponse{
-			Qubits:              8,
-			Depth:               20,
-			GateCount:          40,
-			CXCount:            15,
-			Parallelism:        0.5,
-			MemoryBytes:        4096,
-			ComplexityClass:    "B",
-			RecommendedMethod:  "statevector",
-			EstimatedCPU:       2,
-			EstimatedMemoryMB:  2048,
-			EstimatedTimeSec:   15,
-			RecommendedPool:    "cpu",
-		}
-	} else {
-		analysis = AnalyzeCircuitResponse{
-			Qubits:              20,
-			Depth:               100,
-			GateCount:          200,
-			CXCount:            80,
-			Parallelism:        0.4,
-			MemoryBytes:        16777216, // 16MB for 20 qubits
-			ComplexityClass:    "C",
-			RecommendedMethod:  "statevector",
-			EstimatedCPU:       8,
-			EstimatedMemoryMB:  8192,
-			EstimatedTimeSec:   60,
-			RecommendedPool:    "high-cpu",
-		}
+	// Call circuit analyzer service
+	ctx := context.Background()
+	analyzerReq := &analyzer.AnalyzeRequest{
+		Code:     req.Code,
+		Language: req.Language,
+	}
+
+	result, err := h.analyzerClient.Analyze(ctx, analyzerReq)
+	if err != nil {
+		h.logger.Warn("Circuit analyzer service failed, using fallback estimation", zap.Error(err))
+		
+		// Use fallback estimation
+		result = analyzer.EstimateResources(req.Code, req.Language)
+	}
+
+	h.logger.Info("Circuit analysis completed",
+		zap.Int("qubits", result.Qubits),
+		zap.Int("depth", result.Depth),
+		zap.String("complexity_class", result.ComplexityClass),
+		zap.String("recommended_method", result.RecommendedMethod),
+		zap.String("recommended_pool", result.RecommendedPool),
+	)
+
+	// Map analyzer response to handler response
+	analysis := AnalyzeCircuitResponse{
+		Qubits:              result.Qubits,
+		Depth:               result.Depth,
+		GateCount:           result.GateCount,
+		CXCount:             result.CXCount,
+		Parallelism:         result.Parallelism,
+		MemoryBytes:         result.MemoryBytes,
+		ComplexityClass:     result.ComplexityClass,
+		RecommendedMethod:   result.RecommendedMethod,
+		EstimatedCPU:        result.EstimatedCPU,
+		EstimatedMemoryMB:   result.EstimatedMemoryMB,
+		EstimatedTimeSec:    result.EstimatedTimeSec,
+		RecommendedPool:     result.RecommendedPool,
 	}
 
 	c.JSON(http.StatusOK, analysis)
