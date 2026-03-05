@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 	"net/http"
 	"os"
 	"os/signal"
@@ -132,6 +133,7 @@ func initConfig() {
 	// Environment variables
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("QSIM")
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	// Read config file if present
 	if err := viper.ReadInConfig(); err == nil {
