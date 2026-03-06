@@ -127,3 +127,6 @@ K8s CR Status → Informer → DB Update → API Response
 | #11 | Code cleanup | .gitignore, Go version unification |
 | #12 | Status conflict fix | Conflict-safe status updates |
 | #13 | K8s→DB sync | Informer, RBAC, Auth middleware |
+| #14 | DB migration | Init container auto-migration |
+| #15 | CI pipeline | envtest, coverage, operator build |
+| #16 | API Server tests | Middleware, store, syncer tests |
