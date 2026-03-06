@@ -10,7 +10,7 @@ build: ## Build all Go binaries
 	@echo "Building api-server..."
 	cd api-server && go build -o bin/server ./cmd/server/main.go
 	@echo "Building operator..."
-	cd operator && go build -o bin/operator ./cmd/main.go
+	cd operator && go build -o bin/manager ./cmd/manager/main.go
 
 test: ## Run all tests
 	@echo "Testing Go modules..."

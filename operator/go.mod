@@ -1,6 +1,6 @@
 module github.com/mungch0120/qsim-cluster/operator
 
-go 1.21
+go 1.26
 
 require (
 	github.com/onsi/ginkgo/v2 v2.11.0
