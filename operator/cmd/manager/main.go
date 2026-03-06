@@ -112,6 +112,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Setup JupyterRuntime controller
+	if err = (&controller.JupyterRuntimeReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "JupyterRuntime")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -145,6 +154,7 @@ func printStartupBanner() {
 ║  • Scheduling quantum simulations                           ║
 ║  • Node profile monitoring                                  ║
 ║  • Intelligent resource allocation                          ║
+║  • Jupyter notebook lifecycle management                    ║
 ╚══════════════════════════════════════════════════════════════╝
 `
 	fmt.Print(banner)

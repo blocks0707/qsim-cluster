@@ -121,6 +121,11 @@ func NewClient(config Config, logger *zap.Logger) (*Client, error) {
 	return client, nil
 }
 
+// DynamicClient returns the underlying dynamic client
+func (c *Client) DynamicClient() dynamic.Interface {
+	return c.dynamicClient
+}
+
 // CreateQuantumJob creates a QuantumJob custom resource
 func (c *Client) CreateQuantumJob(ctx context.Context, job *QuantumJob) error {
 	// QuantumJob CRD schema

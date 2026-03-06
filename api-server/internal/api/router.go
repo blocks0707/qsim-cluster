@@ -59,6 +59,16 @@ func NewRouter(stores *store.Stores, k8sClient *k8s.Client, analyzerClient *anal
 			analysis.POST("", analysisHandler.AnalyzeCircuit)
 		}
 
+		// Jupyter notebook routes
+		jupyterHandler := handlers.NewJupyterHandler(k8sClient, logger)
+		jupyter := v1.Group("/jupyter")
+		{
+			jupyter.POST("", jupyterHandler.CreateJupyter)
+			jupyter.GET("", jupyterHandler.ListJupyter)
+			jupyter.GET("/:name", jupyterHandler.GetJupyter)
+			jupyter.DELETE("/:name", jupyterHandler.DeleteJupyter)
+		}
+
 		// Cluster status routes
 		cluster := v1.Group("/cluster")
 		{
