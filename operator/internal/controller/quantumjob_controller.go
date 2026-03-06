@@ -109,9 +109,11 @@ func (r *QuantumJobReconciler) handleNewJob(ctx context.Context, job *quantumv1a
 	r.addJobEvent(job, "Normal", "Created", "QuantumJob created and validation passed")
 
 	// Update status
-	if err := r.Status().Update(ctx, job); err != nil {
+	if requeue, err := r.updateStatus(ctx, job); err != nil {
 		logger.Error(err, "Failed to update job status to Pending")
 		return ctrl.Result{}, err
+	} else if requeue {
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// Immediately requeue to process pending state
@@ -133,9 +135,11 @@ func (r *QuantumJobReconciler) handlePendingJob(ctx context.Context, job *quantu
 		r.addJobEvent(job, "Normal", "StartingAnalysis", "Starting circuit complexity analysis")
 	}
 
-	if err := r.Status().Update(ctx, job); err != nil {
+	if requeue, err := r.updateStatus(ctx, job); err != nil {
 		logger.Error(err, "Failed to update job phase")
 		return ctrl.Result{}, err
+	} else if requeue {
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	return ctrl.Result{Requeue: true}, nil
@@ -193,13 +197,25 @@ func (r *QuantumJobReconciler) handleAnalyzingJob(ctx context.Context, job *quan
 	r.setJobCondition(&job.Status.Conditions, condition)
 
 	if err := r.Update(ctx, job); err != nil {
+		if errors.IsConflict(err) {
+			logger.Info("Conflict updating job spec, requeueing")
+			return ctrl.Result{Requeue: true}, nil
+		}
 		logger.Error(err, "Failed to update job with complexity")
 		return ctrl.Result{}, err
 	}
 
-	if err := r.Status().Update(ctx, job); err != nil {
+	// Re-fetch the job after spec update to get the latest resourceVersion
+	if err := r.Get(ctx, types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, job); err != nil {
+		logger.Error(err, "Failed to re-fetch job after spec update")
+		return ctrl.Result{}, err
+	}
+
+	if requeue, err := r.updateStatus(ctx, job); err != nil {
 		logger.Error(err, "Failed to update job status")
 		return ctrl.Result{}, err
+	} else if requeue {
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	return ctrl.Result{Requeue: true}, nil
@@ -278,9 +294,11 @@ func (r *QuantumJobReconciler) handleSchedulingJob(ctx context.Context, job *qua
 		"pool", bestNode.Spec.Pool,
 		"score", bestScore.TotalScore)
 
-	if err := r.Status().Update(ctx, job); err != nil {
+	if requeue, err := r.updateStatus(ctx, job); err != nil {
 		logger.Error(err, "Failed to update job status after scheduling")
 		return ctrl.Result{}, err
+	} else if requeue {
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	return ctrl.Result{Requeue: true}, nil
@@ -342,9 +360,11 @@ func (r *QuantumJobReconciler) createSimulationPod(ctx context.Context, job *qua
 
 	logger.Info("Simulation pod created", "job", job.Name, "pod", pod.Name)
 
-	if err := r.Status().Update(ctx, job); err != nil {
+	if requeue, err := r.updateStatus(ctx, job); err != nil {
 		logger.Error(err, "Failed to update job status after pod creation")
 		return ctrl.Result{}, err
+	} else if requeue {
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	// Requeue to monitor pod status
@@ -410,9 +430,11 @@ func (r *QuantumJobReconciler) handleJobSuccess(ctx context.Context, job *quantu
 
 	logger.Info("Job completed successfully", "job", job.Name, "executionTime", job.Status.ExecutionTimeSec)
 
-	if err := r.Status().Update(ctx, job); err != nil {
+	if requeue, err := r.updateStatus(ctx, job); err != nil {
 		logger.Error(err, "Failed to update job status after success")
 		return ctrl.Result{}, err
+	} else if requeue {
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -456,9 +478,11 @@ func (r *QuantumJobReconciler) handleJobFailure(ctx context.Context, job *quantu
 			logger.Error(err, "Failed to delete failed pod")
 		}
 
-		if err := r.Status().Update(ctx, job); err != nil {
+		if requeue, err := r.updateStatus(ctx, job); err != nil {
 			logger.Error(err, "Failed to update job status for retry")
 			return ctrl.Result{}, err
+		} else if requeue {
+			return ctrl.Result{Requeue: true}, nil
 		}
 
 		// Requeue with backoff
@@ -496,9 +520,11 @@ func (r *QuantumJobReconciler) failJob(ctx context.Context, job *quantumv1alpha1
 
 	logger.Error(fmt.Errorf("job failed"), "Job failed permanently", "job", job.Name, "error", errorMessage)
 
-	if err := r.Status().Update(ctx, job); err != nil {
+	if requeue, err := r.updateStatus(ctx, job); err != nil {
 		logger.Error(err, "Failed to update job status after failure")
 		return ctrl.Result{}, err
+	} else if requeue {
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -559,6 +585,19 @@ func (r *QuantumJobReconciler) setJobCondition(conditions *[]metav1.Condition, n
 	}
 	// Condition not found, append it
 	*conditions = append(*conditions, newCondition)
+}
+
+// updateStatus updates the job status with conflict retry handling.
+// Returns (requeue, error). If requeue is true, caller should return Requeue.
+func (r *QuantumJobReconciler) updateStatus(ctx context.Context, job *quantumv1alpha1.QuantumJob) (bool, error) {
+	if err := r.Status().Update(ctx, job); err != nil {
+		if errors.IsConflict(err) {
+			log.FromContext(ctx).Info("Conflict updating job status, requeueing", "job", job.Name)
+			return true, nil
+		}
+		return false, err
+	}
+	return false, nil
 }
 
 // SetupWithManager sets up the controller with the Manager
