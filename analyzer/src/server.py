@@ -8,6 +8,7 @@ to estimate complexity, resource requirements, and optimal simulation methods.
 
 import os
 import sys
+import time
 import traceback
 from typing import Dict, Any, Optional
 
@@ -87,7 +88,7 @@ async def analyze_circuit(request: AnalysisRequest):
     This endpoint analyzes Qiskit Python code without executing the simulation,
     extracting circuit properties and estimating resource requirements.
     """
-    start_time = uvicorn.utils.time.time()
+    start_time = time.time()
     
     logger.info("circuit_analysis_started", 
                 language=request.language,
@@ -119,7 +120,7 @@ async def analyze_circuit(request: AnalysisRequest):
         complexity = analyzer.analyze(circuit_data['circuit'], circuit_data.get('shots', 1024))
         
         # Calculate analysis time
-        analysis_time_ms = int((uvicorn.utils.time.time() - start_time) * 1000)
+        analysis_time_ms = int((time.time() - start_time) * 1000)
         
         result = ComplexityResult(
             qubits=complexity['qubits'],
@@ -159,7 +160,7 @@ async def analyze_circuit(request: AnalysisRequest):
                     error=error_msg,
                     traceback=traceback.format_exc())
         
-        analysis_time_ms = int((uvicorn.utils.time.time() - start_time) * 1000)
+        analysis_time_ms = int((time.time() - start_time) * 1000)
         
         return AnalysisResponse(
             success=False,

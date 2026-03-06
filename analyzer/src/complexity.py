@@ -10,7 +10,6 @@ import math
 
 import structlog
 from qiskit import QuantumCircuit, transpile
-from qiskit.circuit.library import standard_gates
 
 logger = structlog.get_logger()
 

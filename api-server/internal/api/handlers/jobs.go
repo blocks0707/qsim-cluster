@@ -99,9 +99,11 @@ func (h *JobHandler) CreateJob(c *gin.Context) {
 
 	analysis, err := h.analyzerClient.Analyze(ctx, analysisReq)
 	if err != nil {
-		h.logger.Warn("Circuit analyzer failed, using fallback estimation", zap.Error(err))
-		// Use fallback estimation
-		analysis = analyzer.EstimateResources(req.Code, req.Language)
+		h.logger.Error("Circuit analyzer failed", zap.Error(err))
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"error": "Circuit analysis failed. Please try again later.",
+		})
+		return
 	}
 
 	h.logger.Info("Circuit analysis completed",

@@ -47,6 +47,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=redis123
       - LOG_LEVEL=debug
+      - ANALYZER_URL=http://analyzer:8000
     depends_on:
       postgres:
         condition: service_healthy

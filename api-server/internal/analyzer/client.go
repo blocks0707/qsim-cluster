@@ -132,11 +132,26 @@ func (c *Client) Analyze(ctx context.Context, req *AnalyzeRequest) (*AnalyzeResp
 		return nil, fmt.Errorf("analyzer request failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
-	// Parse successful response
-	var result AnalyzeResponse
-	if err := json.Unmarshal(body, &result); err != nil {
+	// Parse successful response (analyzer returns {success, complexity: {...}, analysis_time_ms})
+	var wrapper struct {
+		Success       bool             `json:"success"`
+		Complexity    *AnalyzeResponse `json:"complexity"`
+		Error         string           `json:"error"`
+		AnalysisTimeMs int             `json:"analysis_time_ms"`
+	}
+	if err := json.Unmarshal(body, &wrapper); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
+
+	if !wrapper.Success {
+		return nil, fmt.Errorf("analyzer reported failure: %s", wrapper.Error)
+	}
+
+	if wrapper.Complexity == nil {
+		return nil, fmt.Errorf("analyzer returned empty complexity result")
+	}
+
+	result := wrapper.Complexity
 
 	c.logger.Info("Circuit analysis completed",
 		zap.Int("qubits", result.Qubits),
@@ -147,7 +162,7 @@ func (c *Client) Analyze(ctx context.Context, req *AnalyzeRequest) (*AnalyzeResp
 		zap.String("recommended_pool", result.RecommendedPool),
 	)
 
-	return &result, nil
+	return result, nil
 }
 
 // Health checks if the analyzer service is healthy
