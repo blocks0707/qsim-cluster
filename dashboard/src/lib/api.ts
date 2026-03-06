@@ -12,12 +12,16 @@ import type {
   AnalyzeCircuitRequest,
 } from "@/types";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+function getBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("qsim_api_url") || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  }
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+}
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("token");
+  return localStorage.getItem("qsim_token");
 }
 
 async function request<T>(
@@ -33,10 +37,17 @@ async function request<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${getBaseUrl()}${path}`, {
     ...options,
     headers,
   });
+
+  if (res.status === 401 && typeof window !== "undefined") {
+    localStorage.removeItem("qsim_api_url");
+    localStorage.removeItem("qsim_token");
+    window.location.href = "/login";
+    throw new Error("Unauthorized");
+  }
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
