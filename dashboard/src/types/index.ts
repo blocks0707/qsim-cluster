@@ -84,16 +84,35 @@ export interface CreateJobRequest {
 }
 
 // Jupyter
+export type JupyterPhase =
+  | "Pending"
+  | "Provisioning"
+  | "Running"
+  | "Stopping"
+  | "Stopped"
+  | "Failed";
+
 export interface JupyterSession {
   name: string;
-  status: "running" | "stopped" | "error";
+  phase: JupyterPhase;
   url?: string;
+  token?: string;
   createdAt: string;
   nodeId?: string;
+  image?: string;
+  cpu?: string;
+  memory?: string;
+  storage?: string;
 }
 
 export interface CreateJupyterRequest {
   name: string;
+  image?: string;
+  cpu?: string;
+  memory?: string;
+  storage?: string;
+  timeout?: number;
+  packages?: string[];
   nodeId?: string;
 }
 
