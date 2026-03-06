@@ -22,7 +22,6 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -119,7 +118,7 @@ var _ = Describe("QuantumJob Controller", func() {
 	Context("When validating job specifications", func() {
 		It("Should reject jobs with invalid specifications", func() {
 			reconciler := &QuantumJobReconciler{}
-			
+
 			// Test missing UserID
 			invalidJob := &quantumv1alpha1.QuantumJob{
 				Spec: quantumv1alpha1.QuantumJobSpec{
@@ -131,7 +130,7 @@ var _ = Describe("QuantumJob Controller", func() {
 					},
 				},
 			}
-			
+
 			err := reconciler.validateJobSpec(invalidJob)
 			Expect(err).Should(HaveOccurred())
 			Expect(err.Error()).Should(ContainSubstring("userID is required"))
@@ -197,7 +196,7 @@ var _ = Describe("QuantumJob Controller", func() {
 				Message:            "Job is ready",
 			}
 			reconciler.setJobCondition(&conditions, condition1)
-			
+
 			Expect(len(conditions)).Should(Equal(1))
 			Expect(conditions[0].Type).Should(Equal("Ready"))
 			Expect(conditions[0].Status).Should(Equal(metav1.ConditionTrue))
@@ -211,7 +210,7 @@ var _ = Describe("QuantumJob Controller", func() {
 				Message:            "Job is not ready",
 			}
 			reconciler.setJobCondition(&conditions, condition2)
-			
+
 			// Should still have only one condition, but updated
 			Expect(len(conditions)).Should(Equal(1))
 			Expect(conditions[0].Type).Should(Equal("Ready"))
@@ -227,7 +226,7 @@ var _ = Describe("QuantumJob Controller", func() {
 				Message:            "Node assigned successfully",
 			}
 			reconciler.setJobCondition(&conditions, condition3)
-			
+
 			// Should now have two conditions
 			Expect(len(conditions)).Should(Equal(2))
 		})

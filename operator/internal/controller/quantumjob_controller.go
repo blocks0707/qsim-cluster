@@ -41,9 +41,9 @@ type QuantumJobReconciler struct {
 	Scheme *runtime.Scheme
 
 	// Internal components
-	PodBuilder   *quantumruntime.PodBuilder
-	NodeScorer   *scheduler.NodeScorer
-	Predicates   *scheduler.PredicateRegistry
+	PodBuilder *quantumruntime.PodBuilder
+	NodeScorer *scheduler.NodeScorer
+	Predicates *scheduler.PredicateRegistry
 }
 
 //+kubebuilder:rbac:groups=quantum.blocksq.io,resources=quantumjobs,verbs=get;list;watch;create;update;patch;delete
@@ -149,11 +149,11 @@ func (r *QuantumJobReconciler) handleAnalyzingJob(ctx context.Context, job *quan
 	// 1. Call the circuit analyzer service
 	// 2. Wait for analysis results
 	// 3. Update the job spec with complexity metadata
-	
+
 	// For now, provide default complexity if not present
 	if job.Spec.Complexity == nil {
 		logger.Info("No complexity provided, using defaults", "name", job.Name)
-		
+
 		// Set default complexity values
 		job.Spec.Complexity = &quantumv1alpha1.ComplexitySpec{
 			Qubits:            4,
@@ -165,7 +165,7 @@ func (r *QuantumJobReconciler) handleAnalyzingJob(ctx context.Context, job *quan
 			EstimatedTimeSec:  30,
 			Method:            quantumv1alpha1.SimulationMethodStatevector,
 		}
-		
+
 		// Update default resources based on complexity
 		if job.Spec.Resources.CPU == "" {
 			job.Spec.Resources.CPU = "2"
@@ -177,8 +177,8 @@ func (r *QuantumJobReconciler) handleAnalyzingJob(ctx context.Context, job *quan
 
 	// Move to scheduling phase
 	job.Status.Phase = quantumv1alpha1.JobPhaseScheduling
-	r.addJobEvent(job, "Normal", "AnalysisCompleted", 
-		fmt.Sprintf("Circuit analysis complete: %d qubits, depth %d, method %s", 
+	r.addJobEvent(job, "Normal", "AnalysisCompleted",
+		fmt.Sprintf("Circuit analysis complete: %d qubits, depth %d, method %s",
 			job.Spec.Complexity.Qubits, job.Spec.Complexity.Depth, job.Spec.Complexity.Method))
 
 	// Set analyzed condition
@@ -238,10 +238,10 @@ func (r *QuantumJobReconciler) handleSchedulingJob(ctx context.Context, job *qua
 				reasons += fmt.Sprintf(" %s(%s)", result.NodeName, result.Reason)
 			}
 		}
-		
+
 		logger.Info("No suitable nodes for job", "reasons", reasons)
 		r.addJobEvent(job, "Warning", "NoSuitableNodes", reasons)
-		
+
 		// Requeue after a delay
 		return ctrl.Result{RequeueAfter: time.Second * 60}, nil
 	}
@@ -269,13 +269,13 @@ func (r *QuantumJobReconciler) handleSchedulingJob(ctx context.Context, job *qua
 	}
 	r.setJobCondition(&job.Status.Conditions, condition)
 
-	r.addJobEvent(job, "Normal", "Scheduled", 
+	r.addJobEvent(job, "Normal", "Scheduled",
 		fmt.Sprintf("Scheduled to node %s (pool: %s, score: %.3f)", bestNode.Name, bestNode.Spec.Pool, bestScore.TotalScore))
 
-	logger.Info("Job scheduled successfully", 
-		"job", job.Name, 
-		"node", bestNode.Name, 
-		"pool", bestNode.Spec.Pool, 
+	logger.Info("Job scheduled successfully",
+		"job", job.Name,
+		"node", bestNode.Name,
+		"pool", bestNode.Spec.Pool,
 		"score", bestScore.TotalScore)
 
 	if err := r.Status().Update(ctx, job); err != nil {
@@ -294,7 +294,7 @@ func (r *QuantumJobReconciler) handleRunningJob(ctx context.Context, job *quantu
 	podName := fmt.Sprintf("qjob-%s-runner", job.Name)
 	var existingPod corev1.Pod
 	err := r.Get(ctx, types.NamespacedName{Name: podName, Namespace: job.Namespace}, &existingPod)
-	
+
 	if errors.IsNotFound(err) {
 		// Pod doesn't exist, create it
 		return r.createSimulationPod(ctx, job)
@@ -359,17 +359,17 @@ func (r *QuantumJobReconciler) monitorSimulationPod(ctx context.Context, job *qu
 	case corev1.PodPending:
 		logger.Info("Simulation pod is pending", "pod", pod.Name)
 		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
-		
+
 	case corev1.PodRunning:
 		logger.Info("Simulation pod is running", "pod", pod.Name)
 		return ctrl.Result{RequeueAfter: time.Second * 15}, nil
-		
+
 	case corev1.PodSucceeded:
 		return r.handleJobSuccess(ctx, job, pod)
-		
+
 	case corev1.PodFailed:
 		return r.handleJobFailure(ctx, job, pod)
-		
+
 	default:
 		logger.Info("Unknown pod phase", "pod", pod.Name, "phase", pod.Status.Phase)
 		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
@@ -425,7 +425,7 @@ func (r *QuantumJobReconciler) handleJobFailure(ctx context.Context, job *quantu
 	// Get failure reason from pod
 	reason := "Unknown"
 	message := "Simulation pod failed"
-	
+
 	if len(pod.Status.ContainerStatuses) > 0 {
 		containerStatus := pod.Status.ContainerStatuses[0]
 		if containerStatus.State.Terminated != nil {
@@ -444,9 +444,9 @@ func (r *QuantumJobReconciler) handleJobFailure(ctx context.Context, job *quantu
 		// Retry the job
 		job.Status.RetryCount++
 		job.Status.Phase = quantumv1alpha1.JobPhaseScheduling // Re-schedule
-		job.Status.AssignedNode = "" // Clear node assignment
+		job.Status.AssignedNode = ""                          // Clear node assignment
 
-		r.addJobEvent(job, "Warning", "JobRetrying", 
+		r.addJobEvent(job, "Warning", "JobRetrying",
 			fmt.Sprintf("Job failed (%s), retrying (%d/%d)", reason, job.Status.RetryCount, maxRetries))
 
 		logger.Info("Retrying failed job", "job", job.Name, "retry", job.Status.RetryCount, "maxRetries", maxRetries)

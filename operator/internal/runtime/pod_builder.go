@@ -29,23 +29,23 @@ import (
 
 const (
 	// Container images
-	SimulatorImage      = "blocksq/qiskit-runtime:latest"
+	SimulatorImage       = "blocksq/qiskit-runtime:latest"
 	ResultCollectorImage = "blocksq/result-collector:latest"
-	
+
 	// Volume names
-	CodeVolumeName    = "code"
-	ResultVolumeName  = "results"
-	
+	CodeVolumeName   = "code"
+	ResultVolumeName = "results"
+
 	// Mount paths
-	CodeMountPath     = "/code"
-	ResultMountPath   = "/results"
-	
+	CodeMountPath   = "/code"
+	ResultMountPath = "/results"
+
 	// Environment variables
-	QiskitMethodEnv        = "QISKIT_METHOD"
-	MaxExecutionTimeEnv    = "MAX_EXECUTION_TIME"
-	S3BucketEnv           = "S3_BUCKET"
-	JobIDEnv              = "JOB_ID"
-	
+	QiskitMethodEnv     = "QISKIT_METHOD"
+	MaxExecutionTimeEnv = "MAX_EXECUTION_TIME"
+	S3BucketEnv         = "S3_BUCKET"
+	JobIDEnv            = "JOB_ID"
+
 	// Default values
 	DefaultResultsBucket   = "quantum-results"
 	DefaultResultSizeLimit = "1Gi"
@@ -62,27 +62,27 @@ func NewPodBuilder() *PodBuilder {
 // BuildSimulationPod creates a simulation pod from QuantumJob
 func (pb *PodBuilder) BuildSimulationPod(job *quantumv1alpha1.QuantumJob) (*corev1.Pod, error) {
 	podName := fmt.Sprintf("qjob-%s-runner", job.Name)
-	
+
 	// Build main simulator container
 	simulatorContainer, err := pb.buildSimulatorContainer(job)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build simulator container: %w", err)
 	}
-	
+
 	// Build result collector sidecar
 	collectorContainer := pb.buildResultCollectorContainer(job)
-	
+
 	// Build volumes
 	volumes := pb.buildVolumes(job)
-	
+
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      podName,
 			Namespace: job.Namespace,
 			Labels: map[string]string{
-				"quantum-job":          job.Name,
-				"quantum-job-user-id":  job.Spec.UserID,
-				"quantum-job-phase":    string(job.Status.Phase),
+				"quantum-job":         job.Name,
+				"quantum-job-user-id": job.Spec.UserID,
+				"quantum-job-phase":   string(job.Status.Phase),
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -96,18 +96,18 @@ func (pb *PodBuilder) BuildSimulationPod(job *quantumv1alpha1.QuantumJob) (*core
 			},
 		},
 		Spec: corev1.PodSpec{
-			Containers:    []corev1.Container{simulatorContainer, collectorContainer},
-			Volumes:       volumes,
-			RestartPolicy: corev1.RestartPolicyNever,
+			Containers:            []corev1.Container{simulatorContainer, collectorContainer},
+			Volumes:               volumes,
+			RestartPolicy:         corev1.RestartPolicyNever,
 			ActiveDeadlineSeconds: &[]int64{int64(job.Spec.Scheduling.Timeout)}[0],
 		},
 	}
-	
+
 	// Add node assignment if available
 	if job.Status.AssignedNode != "" {
 		pod.Spec.NodeName = job.Status.AssignedNode
 	}
-	
+
 	return pod, nil
 }
 
@@ -118,12 +118,12 @@ func (pb *PodBuilder) buildSimulatorContainer(job *quantumv1alpha1.QuantumJob) (
 	if err != nil {
 		return corev1.Container{}, fmt.Errorf("invalid CPU quantity: %w", err)
 	}
-	
+
 	memoryQuantity, err := resource.ParseQuantity(job.Spec.Resources.Memory)
 	if err != nil {
 		return corev1.Container{}, fmt.Errorf("invalid memory quantity: %w", err)
 	}
-	
+
 	// Set up environment variables
 	envVars := []corev1.EnvVar{
 		{
@@ -135,7 +135,7 @@ func (pb *PodBuilder) buildSimulatorContainer(job *quantumv1alpha1.QuantumJob) (
 			Value: strconv.Itoa(int(job.Spec.Scheduling.Timeout)),
 		},
 	}
-	
+
 	container := corev1.Container{
 		Name:    "simulator",
 		Image:   SimulatorImage,
@@ -164,7 +164,7 @@ func (pb *PodBuilder) buildSimulatorContainer(job *quantumv1alpha1.QuantumJob) (
 		},
 		Env: envVars,
 	}
-	
+
 	// Add GPU resource if specified
 	if job.Spec.Resources.GPU != "" && job.Spec.Resources.GPU != "0" {
 		gpuQuantity, err := resource.ParseQuantity(job.Spec.Resources.GPU)
@@ -174,7 +174,7 @@ func (pb *PodBuilder) buildSimulatorContainer(job *quantumv1alpha1.QuantumJob) (
 		container.Resources.Limits["nvidia.com/gpu"] = gpuQuantity
 		container.Resources.Requests["nvidia.com/gpu"] = gpuQuantity
 	}
-	
+
 	return container, nil
 }
 
@@ -273,7 +273,7 @@ func (pb *PodBuilder) SetPodNodeAffinity(pod *corev1.Pod, nodePool quantumv1alph
 	if nodePool == quantumv1alpha1.NodePoolAuto {
 		return // No specific affinity for auto
 	}
-	
+
 	affinity := &corev1.Affinity{
 		NodeAffinity: &corev1.NodeAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
@@ -291,6 +291,6 @@ func (pb *PodBuilder) SetPodNodeAffinity(pod *corev1.Pod, nodePool quantumv1alph
 			},
 		},
 	}
-	
+
 	pod.Spec.Affinity = affinity
 }

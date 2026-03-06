@@ -1,0 +1,3 @@
+resources:
+- bases/quantum.blocksq.io_quantumjobs.yaml
+- bases/quantum.blocksq.io_quantumnodeprofiles.yaml

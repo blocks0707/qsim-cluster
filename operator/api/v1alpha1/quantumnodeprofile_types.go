@@ -105,7 +105,7 @@ type QuantumNodeProfileSpec struct {
 	// +kubebuilder:validation:Required
 	CPU CPUCapabilities `json:"cpu"`
 
-	// Memory capabilities  
+	// Memory capabilities
 	// +kubebuilder:validation:Required
 	Memory MemoryCapabilities `json:"memory"`
 

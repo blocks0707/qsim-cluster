@@ -53,7 +53,7 @@ type SimulationMethod string
 
 const (
 	SimulationMethodStatevector SimulationMethod = "statevector"
-	SimulationMethodStabilizer  SimulationMethod = "stabilizer" 
+	SimulationMethodStabilizer  SimulationMethod = "stabilizer"
 	SimulationMethodMPS         SimulationMethod = "mps"
 	SimulationMethodAutomatic   SimulationMethod = "automatic"
 )

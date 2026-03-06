@@ -1,0 +1,8 @@
+namespace: quantum-system
+
+namePrefix: quantum-
+
+resources:
+- ../crd
+- ../rbac
+- ../manager

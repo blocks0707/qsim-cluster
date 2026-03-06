@@ -28,11 +28,11 @@ func TestNodeScorer_CalculateResourceFit(t *testing.T) {
 	scorer := NewNodeScorer()
 
 	testCases := []struct {
-		name           string
-		job            *quantumv1alpha1.QuantumJob
-		node           *quantumv1alpha1.QuantumNodeProfile
-		expectedScore  float64
-		expectError    bool
+		name          string
+		job           *quantumv1alpha1.QuantumJob
+		node          *quantumv1alpha1.QuantumNodeProfile
+		expectedScore float64
+		expectError   bool
 	}{
 		{
 			name: "perfect fit",
@@ -90,7 +90,7 @@ func TestNodeScorer_CalculateResourceFit(t *testing.T) {
 					},
 				},
 			},
-			expectedScore: 0.0,
+			expectedScore: 0.5, // min(4/8, 8GB/16GB) = 0.5, capped at resource fit ratio
 		},
 		{
 			name: "partial load",
@@ -126,7 +126,7 @@ func TestNodeScorer_CalculateResourceFit(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			score := scorer.calculateResourceFit(tc.job, tc.node)
-			
+
 			if score != tc.expectedScore {
 				t.Errorf("Expected score %f, got %f", tc.expectedScore, score)
 			}
@@ -197,9 +197,9 @@ func TestNodeScorer_CalculateLoadBalance(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			score := scorer.calculateLoadBalance(tc.node)
-			
+
 			if score < tc.expectedRange[0] || score > tc.expectedRange[1] {
-				t.Errorf("Expected score between %f and %f, got %f", 
+				t.Errorf("Expected score between %f and %f, got %f",
 					tc.expectedRange[0], tc.expectedRange[1], score)
 			}
 		})
@@ -284,7 +284,7 @@ func TestNodeScorer_CalculatePoolMatch(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			score := scorer.calculatePoolMatch(tc.job, tc.node)
-			
+
 			if score != tc.expectedScore {
 				t.Errorf("Expected score %f, got %f", tc.expectedScore, score)
 			}
@@ -410,7 +410,7 @@ func TestNodeScorer_ScoreNodes(t *testing.T) {
 	// Verify scores are sorted (highest first)
 	for i := 1; i < len(scores); i++ {
 		if scores[i-1].TotalScore < scores[i].TotalScore {
-			t.Errorf("Scores not sorted: score[%d]=%.3f > score[%d]=%.3f", 
+			t.Errorf("Scores not sorted: score[%d]=%.3f > score[%d]=%.3f",
 				i-1, scores[i-1].TotalScore, i, scores[i].TotalScore)
 		}
 	}
@@ -482,6 +482,6 @@ func TestNodeScorer_GetBestNode(t *testing.T) {
 		t.Errorf("Expected positive score, got %.3f", bestScore.TotalScore)
 	}
 
-	t.Logf("Best node: %s with score %.3f (%s)", 
+	t.Logf("Best node: %s with score %.3f (%s)",
 		bestNode.Name, bestScore.TotalScore, bestScore.Details)
 }
