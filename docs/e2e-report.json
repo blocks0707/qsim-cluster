@@ -1,0 +1,132 @@
+{
+  "timestamp": "2026-03-06T20:38:24.183899",
+  "endpoint": "http://localhost:8080",
+  "summary": {
+    "total": 17,
+    "passed": 15,
+    "failed": 2,
+    "elapsed_sec": 10.0,
+    "pass_rate": "88%"
+  },
+  "results": [
+    {
+      "name": "T01: Health Check",
+      "passed": true,
+      "duration_ms": 13.6,
+      "details": "status=ok",
+      "error": ""
+    },
+    {
+      "name": "T02: Cluster Status",
+      "passed": true,
+      "duration_ms": 12.9,
+      "details": "status_code=503, cluster_status=degraded (expected: degraded \u2014 known RBAC issue)",
+      "error": ""
+    },
+    {
+      "name": "T03: Submit Bell State (2q)",
+      "passed": true,
+      "duration_ms": 17.1,
+      "details": "job_id=cdbbb9bd-7381-4427-9605-f9b7b59b0436, qubits=2, class=A",
+      "error": ""
+    },
+    {
+      "name": "T04: Wait Bell State",
+      "passed": true,
+      "duration_ms": 3170.9,
+      "details": "phase=Succeeded, wait=3.2s",
+      "error": ""
+    },
+    {
+      "name": "T05: Verify Bell Result",
+      "passed": true,
+      "duration_ms": 47.7,
+      "details": "counts={'00': 510, '11': 514}, total_shots=1024",
+      "error": ""
+    },
+    {
+      "name": "T06: Bell CR Status Fields",
+      "passed": true,
+      "duration_ms": 32.7,
+      "details": "phase=Succeeded, execTime=2s, node=minikube, pool=cpu",
+      "error": ""
+    },
+    {
+      "name": "T07: Submit GHZ State (3q)",
+      "passed": true,
+      "duration_ms": 16.9,
+      "details": "job_id=b50244c0-7368-4154-9f13-e03f6b89dd92",
+      "error": ""
+    },
+    {
+      "name": "T08: Wait GHZ State",
+      "passed": true,
+      "duration_ms": 3188.3,
+      "details": "phase=Succeeded, wait=3.2s",
+      "error": ""
+    },
+    {
+      "name": "T09: Verify GHZ Result",
+      "passed": true,
+      "duration_ms": 44.6,
+      "details": "counts={'111': 1047, '000': 1001}, total=2048",
+      "error": ""
+    },
+    {
+      "name": "T10: Submit QFT (4q)",
+      "passed": true,
+      "duration_ms": 18.1,
+      "details": "job_id=16ef10e4-ae3e-4637-b08e-83c79c24874a, analysis={'complexity_class': 'B', 'estimated_time_sec': 73, 'qubits': 4, 'recommended_pool': 'cpu'}",
+      "error": ""
+    },
+    {
+      "name": "T11: Wait QFT",
+      "passed": true,
+      "duration_ms": 3094.6,
+      "details": "phase=Succeeded, wait=3.1s",
+      "error": ""
+    },
+    {
+      "name": "T12: Verify QFT Result",
+      "passed": true,
+      "duration_ms": 42.1,
+      "details": "basis_states=16, total=4096, sample={'0100': 266, '1101': 254, '0111': 261, '0011': 277}",
+      "error": ""
+    },
+    {
+      "name": "T13: Auth Rejection",
+      "passed": false,
+      "duration_ms": 8.6,
+      "details": "",
+      "error": "AssertionError: Expected 401/403, got 503"
+    },
+    {
+      "name": "T14: Empty Body",
+      "passed": true,
+      "duration_ms": 4.3,
+      "details": "status_code=400, error=Invalid request body",
+      "error": ""
+    },
+    {
+      "name": "T15: List Jobs",
+      "passed": true,
+      "duration_ms": 5.1,
+      "details": "total=17, returned=10",
+      "error": ""
+    },
+    {
+      "name": "T16: SDK Client",
+      "passed": true,
+      "duration_ms": 295.1,
+      "details": "code_lines=13",
+      "error": ""
+    },
+    {
+      "name": "T17: DB Status Sync",
+      "passed": false,
+      "duration_ms": 11.9,
+      "details": "",
+      "error": "AssertionError: db_status=submitted (expected succeeded \u2014 known issue: no K8s\u2192DB status sync)"
+    }
+  ]
+}
