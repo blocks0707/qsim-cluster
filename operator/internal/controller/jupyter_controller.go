@@ -87,6 +87,10 @@ func (r *JupyterRuntimeReconciler) handlePending(ctx context.Context, jr *quantu
 
 	// Create PVC for notebook storage
 	pvc := r.buildPVC(jr)
+	if err := ctrl.SetControllerReference(jr, pvc, r.Scheme); err != nil {
+		logger.Error(err, "Failed to set PVC owner reference")
+		return ctrl.Result{}, err
+	}
 	if err := r.Create(ctx, pvc); err != nil && !errors.IsAlreadyExists(err) {
 		logger.Error(err, "Failed to create PVC")
 		return ctrl.Result{}, err
@@ -94,6 +98,10 @@ func (r *JupyterRuntimeReconciler) handlePending(ctx context.Context, jr *quantu
 
 	// Create the Jupyter pod
 	pod := r.buildPod(jr)
+	if err := ctrl.SetControllerReference(jr, pod, r.Scheme); err != nil {
+		logger.Error(err, "Failed to set Pod owner reference")
+		return ctrl.Result{}, err
+	}
 	if err := r.Create(ctx, pod); err != nil && !errors.IsAlreadyExists(err) {
 		logger.Error(err, "Failed to create Jupyter pod")
 		return ctrl.Result{}, err
@@ -101,6 +109,10 @@ func (r *JupyterRuntimeReconciler) handlePending(ctx context.Context, jr *quantu
 
 	// Create service
 	svc := r.buildService(jr)
+	if err := ctrl.SetControllerReference(jr, svc, r.Scheme); err != nil {
+		logger.Error(err, "Failed to set Service owner reference")
+		return ctrl.Result{}, err
+	}
 	if err := r.Create(ctx, svc); err != nil && !errors.IsAlreadyExists(err) {
 		logger.Error(err, "Failed to create Jupyter service")
 		return ctrl.Result{}, err

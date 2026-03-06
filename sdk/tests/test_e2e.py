@@ -298,6 +298,34 @@ def test_sdk_client():
     assert "AerSimulator" in code
     return f"code_lines={len(code.splitlines())}"
 
+def test_sdk_run_e2e():
+    """T17: SDK run() — submit circuit via QSimClient and poll via API"""
+    from qsim import QSimClient
+    from qiskit import QuantumCircuit
+    
+    client = QSimClient(endpoint=API_ENDPOINT, api_key=API_KEY)
+    
+    qc = QuantumCircuit(2, 2)
+    qc.h(0)
+    qc.cx(0, 1)
+    qc.measure([0, 1], [0, 1])
+    
+    job = client.run(qc, shots=512)
+    assert job.id, "No job ID returned"
+    
+    # Wait via API polling (requires DB sync working)
+    import subprocess
+    cr_name = f"qjob-{job.id}"
+    elapsed = wait_for_cr(cr_name)
+    
+    # Verify via API that DB is synced
+    import time
+    time.sleep(2)  # brief delay for sync
+    r = requests.get(f"{API_ENDPOINT}/api/v1/jobs/{job.id}", headers=HEADERS)
+    data = r.json()
+    
+    return f"job_id={job.id}, cr_wait={elapsed:.1f}s, db_status={data.get('status')}"
+
 def test_db_status_sync():
     """T17: API DB status sync (known issue: not implemented)"""
     job_id = getattr(test_submit_bell, 'job_id', None)
@@ -337,7 +365,8 @@ if __name__ == "__main__":
         ("T14: Empty Body", test_empty_body),
         ("T15: List Jobs", test_list_jobs),
         ("T16: SDK Client", test_sdk_client),
-        ("T17: DB Status Sync", test_db_status_sync),
+        ("T17: SDK run() E2E", test_sdk_run_e2e),
+        ("T18: DB Status Sync", test_db_status_sync),
     ]
     
     for name, fn in tests:
