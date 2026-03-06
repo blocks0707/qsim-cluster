@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# QSim Cluster Dashboard
+
+A modern web dashboard for managing and monitoring quantum simulation clusters built with [qsim-cluster](https://github.com/blocks0707/qsim-cluster).
+
+![Dashboard Screenshot](docs/screenshot-placeholder.png)
+
+## Features
+
+| Page | Description |
+|------|-------------|
+| **Login** | Connect to any qsim-cluster API with endpoint URL + Bearer token |
+| **Overview** | Cluster status, resource gauges, recent jobs, quick stats |
+| **Jobs** | List, create, cancel, retry jobs; view results & logs |
+| **Nodes** | Node grid with status, qubits, utilization |
+| **Jupyter** | Manage Jupyter notebook sessions on the cluster |
+| **Metrics** | Qubit distribution, job throughput, complexity charts, resource trends |
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+cd dashboard
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). You'll be redirected to the login page.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables (optional)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8080` | Fallback API endpoint (overridden by login) |
 
-## Learn More
+## Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+- **Next.js 15** (App Router)
+- **Tailwind CSS** — dark theme
+- **Recharts** — metrics visualization
+- **Lucide React** — icons
+- **TypeScript** — full type safety
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Authentication
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The dashboard stores the API URL and Bearer token in `localStorage`. On every API call, the token is sent as `Authorization: Bearer <token>`. A 401 response automatically redirects to the login page.
 
-## Deploy on Vercel
+## Responsive Design
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Desktop: fixed sidebar navigation
+- Mobile: hamburger menu with slide-over sidebar overlay
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+MIT
