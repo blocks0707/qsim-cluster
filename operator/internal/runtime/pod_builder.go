@@ -29,8 +29,7 @@ import (
 
 const (
 	// Container images
-	SimulatorImage       = "blocksq/qiskit-runtime:latest"
-	ResultCollectorImage = "blocksq/result-collector:latest"
+	SimulatorImage = "blocksq/qiskit-runtime:latest"
 
 	// Volume names
 	CodeVolumeName   = "code"
@@ -43,11 +42,8 @@ const (
 	// Environment variables
 	QiskitMethodEnv     = "QISKIT_METHOD"
 	MaxExecutionTimeEnv = "MAX_EXECUTION_TIME"
-	S3BucketEnv         = "S3_BUCKET"
-	JobIDEnv            = "JOB_ID"
 
 	// Default values
-	DefaultResultsBucket   = "quantum-results"
 	DefaultResultSizeLimit = "1Gi"
 )
 
@@ -68,9 +64,6 @@ func (pb *PodBuilder) BuildSimulationPod(job *quantumv1alpha1.QuantumJob) (*core
 	if err != nil {
 		return nil, fmt.Errorf("failed to build simulator container: %w", err)
 	}
-
-	// Build result collector sidecar
-	collectorContainer := pb.buildResultCollectorContainer(job)
 
 	// Build volumes
 	volumes := pb.buildVolumes(job)
@@ -96,7 +89,7 @@ func (pb *PodBuilder) BuildSimulationPod(job *quantumv1alpha1.QuantumJob) (*core
 			},
 		},
 		Spec: corev1.PodSpec{
-			Containers:            []corev1.Container{simulatorContainer, collectorContainer},
+			Containers:            []corev1.Container{simulatorContainer},
 			Volumes:               volumes,
 			RestartPolicy:         corev1.RestartPolicyNever,
 			ActiveDeadlineSeconds: &[]int64{int64(job.Spec.Scheduling.Timeout)}[0],
@@ -177,42 +170,6 @@ func (pb *PodBuilder) buildSimulatorContainer(job *quantumv1alpha1.QuantumJob) (
 	}
 
 	return container, nil
-}
-
-// buildResultCollectorContainer creates the result collector sidecar
-func (pb *PodBuilder) buildResultCollectorContainer(job *quantumv1alpha1.QuantumJob) corev1.Container {
-	return corev1.Container{
-		Name:            "result-collector",
-		Image:           ResultCollectorImage,
-		ImagePullPolicy: corev1.PullIfNotPresent,
-		VolumeMounts: []corev1.VolumeMount{
-			{
-				Name:      ResultVolumeName,
-				MountPath: ResultMountPath,
-				ReadOnly:  true,
-			},
-		},
-		Env: []corev1.EnvVar{
-			{
-				Name:  S3BucketEnv,
-				Value: DefaultResultsBucket,
-			},
-			{
-				Name:  JobIDEnv,
-				Value: job.Name,
-			},
-		},
-		Resources: corev1.ResourceRequirements{
-			Limits: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("100m"),
-				corev1.ResourceMemory: resource.MustParse("128Mi"),
-			},
-			Requests: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("50m"),
-				corev1.ResourceMemory: resource.MustParse("64Mi"),
-			},
-		},
-	}
 }
 
 // buildVolumes creates the required volumes for the pod
