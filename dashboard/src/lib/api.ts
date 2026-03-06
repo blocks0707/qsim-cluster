@@ -42,10 +42,7 @@ async function request<T>(
     headers,
   });
 
-  if (res.status === 401 && typeof window !== "undefined") {
-    localStorage.removeItem("qsim_api_url");
-    localStorage.removeItem("qsim_token");
-    window.location.href = "/login";
+  if (res.status === 401) {
     throw new Error("Unauthorized");
   }
 
@@ -58,18 +55,81 @@ async function request<T>(
 }
 
 // Cluster
-export const getClusterStatus = () =>
-  request<ClusterStatus>("/api/v1/cluster/status");
+export async function getClusterStatus(): Promise<ClusterStatus> {
+  // API returns: { status, nodes: { ready, total, pools }, jobs: { total, running, pending, completed, failed }, resources: { cpu_usage, gpu_usage, memory_usage }, version }
+  const raw = await request<Record<string, unknown>>("/api/v1/cluster/status");
+  const nodes = (raw.nodes ?? {}) as Record<string, unknown>;
+  const jobs = (raw.jobs ?? {}) as Record<string, unknown>;
+  return {
+    name: (raw.version as string) ?? "qsim-cluster",
+    status: (raw.status as ClusterStatus["status"]) ?? "healthy",
+    totalNodes: (nodes.total as number) ?? 0,
+    activeNodes: (nodes.ready as number) ?? 0,
+    totalQubits: 0,
+    runningJobs: (jobs.running as number) ?? 0,
+    pendingJobs: (jobs.pending as number) ?? 0,
+  };
+}
 
-export const getNodes = () =>
-  request<Node[]>("/api/v1/nodes");
+export async function getNodes(): Promise<Node[]> {
+  // API returns: { nodes: [...], total }
+  const raw = await request<Record<string, unknown>>("/api/v1/cluster/nodes");
+  const nodes = Array.isArray(raw.nodes) ? raw.nodes : Array.isArray(raw) ? raw : [];
+  return nodes.map((n: Record<string, unknown>) => ({
+    id: (n.name as string) ?? "",
+    name: (n.name as string) ?? "",
+    status: (n.status as Node["status"]) ?? "ready",
+    pool: (n.pool as string) ?? "cpu",
+    qubits: 0,
+    backend: "qsim",
+    activeJobs: (n.active_jobs as number) ?? 0,
+    labels: (n.labels as Record<string, string>) ?? {},
+    metrics: {
+      cpuUsage: parsePercent(n.cpu_usage),
+      memoryUsage: parsePercent(n.memory_usage),
+      gpuUsage: 0,
+      uptime: 0,
+    },
+  } as Node));
+}
 
-export const getMetrics = () =>
-  request<ClusterMetrics>("/api/v1/metrics");
+function parsePercent(v: unknown): number {
+  if (typeof v === "number") return v;
+  if (typeof v === "string") return parseInt(v.replace("%", ""), 10) || 0;
+  return 0;
+}
+
+export async function getMetrics(): Promise<ClusterMetrics> {
+  // API returns: { cluster: {...}, jobs: {...}, ... }
+  // We return empty metric arrays since the API doesn't provide time-series data
+  await request<Record<string, unknown>>("/api/v1/cluster/metrics");
+  return {
+    jobThroughput: [],
+    queueDepth: [],
+    avgExecutionTime: [],
+    errorRate: [],
+    nodeUtilization: [],
+  };
+}
 
 // Jobs
-export const listJobs = () =>
-  request<Job[]>("/api/v1/jobs");
+export async function listJobs(): Promise<Job[]> {
+  // API returns: { jobs: [...], total, page, limit }
+  const raw = await request<Record<string, unknown>>("/api/v1/jobs");
+  const jobs = Array.isArray(raw.jobs) ? raw.jobs : Array.isArray(raw) ? raw : [];
+  return jobs.map((j: Record<string, unknown>) => ({
+    id: (j.id as string) ?? "",
+    name: (j.name as string) ?? (j.id as string)?.slice(0, 8) ?? "",
+    status: (j.status as Job["status"]) ?? "pending",
+    backend: (j.backend as string) ?? (j.language as string) ?? "qsim",
+    shots: (j.shots as number) ?? 0,
+    qubits: (j.qubits as number) ?? 0,
+    createdAt: (j.created_at as string) ?? (j.createdAt as string) ?? "",
+    startedAt: (j.started_at as string) ?? undefined,
+    completedAt: (j.completed_at as string) ?? (j.updated_at as string) ?? undefined,
+    error: (j.error as string) ?? undefined,
+  } as Job));
+}
 
 export const getJob = (id: string) =>
   request<Job>(`/api/v1/jobs/${id}`);
@@ -81,7 +141,7 @@ export const createJob = (data: CreateJobRequest) =>
   });
 
 export const cancelJob = (id: string) =>
-  request<void>(`/api/v1/jobs/${id}/cancel`, { method: "POST" });
+  request<void>(`/api/v1/jobs/${id}`, { method: "DELETE" });
 
 export const retryJob = (id: string) =>
   request<Job>(`/api/v1/jobs/${id}/retry`, { method: "POST" });
@@ -93,8 +153,11 @@ export const getJobLogs = (id: string) =>
   request<JobLog[]>(`/api/v1/jobs/${id}/logs`);
 
 // Jupyter
-export const listJupyter = () =>
-  request<JupyterSession[]>("/api/v1/jupyter");
+export async function listJupyter(): Promise<JupyterSession[]> {
+  const raw = await request<Record<string, unknown>>("/api/v1/jupyter");
+  const sessions = Array.isArray(raw.sessions) ? raw.sessions : Array.isArray(raw) ? raw : [];
+  return sessions as JupyterSession[];
+}
 
 export const createJupyter = (data: CreateJupyterRequest) =>
   request<JupyterSession>("/api/v1/jupyter", {
