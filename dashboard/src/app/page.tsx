@@ -47,8 +47,8 @@ export default function OverviewPage() {
     try {
       const [s, j, n] = await Promise.all([getClusterStatus(), listJobs(), getNodes()]);
       setStatus(s);
-      setJobs(j);
-      setNodes(n);
+      setJobs(Array.isArray(j) ? j : []);
+      setNodes(Array.isArray(n) ? n : []);
       setUsingMock(false);
       setError(null);
     } catch {
