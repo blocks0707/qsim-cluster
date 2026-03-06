@@ -1,137 +1,137 @@
 {
-  "timestamp": "2026-03-06T21:35:19.506484",
+  "timestamp": "2026-03-06T22:06:47.783137",
   "endpoint": "http://localhost:8080",
   "summary": {
     "total": 18,
     "passed": 18,
     "failed": 0,
-    "elapsed_sec": 18.7,
+    "elapsed_sec": 15.9,
     "pass_rate": "100%"
   },
   "results": [
     {
       "name": "T01: Health Check",
       "passed": true,
-      "duration_ms": 20.7,
+      "duration_ms": 21.8,
       "details": "status=ok",
       "error": ""
     },
     {
       "name": "T02: Cluster Status",
       "passed": true,
-      "duration_ms": 20.0,
+      "duration_ms": 16.9,
       "details": "status_code=200, cluster_status=healthy (expected: degraded \u2014 known RBAC issue)",
       "error": ""
     },
     {
       "name": "T03: Submit Bell State (2q)",
       "passed": true,
-      "duration_ms": 81.6,
-      "details": "job_id=a5f77a1a-e956-4b06-b28c-7e9e4ca21621, qubits=2, class=A",
+      "duration_ms": 24.7,
+      "details": "job_id=8bffc587-5687-4ad3-ad72-188b9179d5a7, qubits=2, class=A",
       "error": ""
     },
     {
       "name": "T04: Wait Bell State",
       "passed": true,
-      "duration_ms": 6387.7,
-      "details": "phase=Succeeded, wait=6.4s",
+      "duration_ms": 3191.9,
+      "details": "phase=Succeeded, wait=3.2s",
       "error": ""
     },
     {
       "name": "T05: Verify Bell Result",
       "passed": true,
-      "duration_ms": 59.9,
-      "details": "counts={'00': 527, '11': 497}, total_shots=1024",
+      "duration_ms": 65.3,
+      "details": "counts={'00': 521, '11': 503}, total_shots=1024",
       "error": ""
     },
     {
       "name": "T06: Bell CR Status Fields",
       "passed": true,
-      "duration_ms": 33.1,
-      "details": "phase=Succeeded, execTime=4s, node=minikube, pool=cpu",
+      "duration_ms": 34.0,
+      "details": "phase=Succeeded, execTime=3s, node=minikube, pool=cpu",
       "error": ""
     },
     {
       "name": "T07: Submit GHZ State (3q)",
       "passed": true,
-      "duration_ms": 19.7,
-      "details": "job_id=e0c5d8f6-790a-400b-b28f-e75aa58d0422",
+      "duration_ms": 16.2,
+      "details": "job_id=fdb563cd-9105-4ce6-9259-68b789ce8f3d",
       "error": ""
     },
     {
       "name": "T08: Wait GHZ State",
       "passed": true,
-      "duration_ms": 3107.9,
-      "details": "phase=Succeeded, wait=3.1s",
+      "duration_ms": 3248.5,
+      "details": "phase=Succeeded, wait=3.2s",
       "error": ""
     },
     {
       "name": "T09: Verify GHZ Result",
       "passed": true,
-      "duration_ms": 47.4,
-      "details": "counts={'111': 1013, '000': 1035}, total=2048",
+      "duration_ms": 50.1,
+      "details": "counts={'000': 1052, '111': 996}, total=2048",
       "error": ""
     },
     {
       "name": "T10: Submit QFT (4q)",
       "passed": true,
-      "duration_ms": 19.7,
-      "details": "job_id=e8c4f475-6b22-4dbe-84df-4612e7fb9b93, analysis={'complexity_class': 'B', 'estimated_time_sec': 73, 'qubits': 4, 'recommended_pool': 'cpu'}",
+      "duration_ms": 22.0,
+      "details": "job_id=fc942217-c422-474d-a84c-ea43e84b3de1, analysis={'complexity_class': 'B', 'estimated_time_sec': 73, 'qubits': 4, 'recommended_pool': 'cpu'}",
       "error": ""
     },
     {
       "name": "T11: Wait QFT",
       "passed": true,
-      "duration_ms": 3245.8,
+      "duration_ms": 3245.7,
       "details": "phase=Succeeded, wait=3.2s",
       "error": ""
     },
     {
       "name": "T12: Verify QFT Result",
       "passed": true,
-      "duration_ms": 47.6,
-      "details": "basis_states=16, total=4096, sample={'0000': 271, '1100': 258, '1000': 273, '0110': 248}",
+      "duration_ms": 46.2,
+      "details": "basis_states=16, total=4096, sample={'1110': 243, '1100': 232, '0110': 261, '1000': 272}",
       "error": ""
     },
     {
       "name": "T13: Auth Rejection",
       "passed": true,
-      "duration_ms": 8.9,
+      "duration_ms": 5.3,
       "details": "status_code=401",
       "error": ""
     },
     {
       "name": "T14: Empty Body",
       "passed": true,
-      "duration_ms": 6.2,
+      "duration_ms": 4.3,
       "details": "status_code=400, error=Invalid request body",
       "error": ""
     },
     {
       "name": "T15: List Jobs",
       "passed": true,
-      "duration_ms": 6.5,
-      "details": "total=26, returned=10",
+      "duration_ms": 5.0,
+      "details": "total=30, returned=10",
       "error": ""
     },
     {
       "name": "T16: SDK Client",
       "passed": true,
-      "duration_ms": 284.8,
+      "duration_ms": 315.7,
       "details": "code_lines=13",
       "error": ""
     },
     {
       "name": "T17: SDK run() E2E",
       "passed": true,
-      "duration_ms": 5265.9,
-      "details": "job_id=fdb37de3-b764-42db-9888-ba7700d29fb6, cr_wait=3.1s, db_status=completed",
+      "duration_ms": 5544.7,
+      "details": "job_id=dd392710-4d11-419b-934d-9b058f7389f6, cr_wait=3.3s, db_status=completed",
       "error": ""
     },
     {
       "name": "T18: DB Status Sync",
       "passed": true,
-      "duration_ms": 10.7,
+      "duration_ms": 12.6,
       "details": "db_status=completed (synced!)",
       "error": ""
     }
