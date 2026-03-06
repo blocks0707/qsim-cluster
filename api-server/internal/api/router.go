@@ -34,6 +34,7 @@ func NewRouter(stores *store.Stores, k8sClient *k8s.Client, analyzerClient *anal
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
+	v1.Use(middleware.Auth())
 	{
 		// Initialize handlers
 		jobHandler := handlers.NewJobHandler(stores, k8sClient, analyzerClient, logger)

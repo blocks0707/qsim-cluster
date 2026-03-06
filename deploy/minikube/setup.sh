@@ -19,9 +19,12 @@ fi
 
 # Start minikube with sufficient resources
 echo "🔧 Starting minikube cluster..."
+MINIKUBE_MEMORY=${MINIKUBE_MEMORY:-6144}
+MINIKUBE_CPUS=${MINIKUBE_CPUS:-4}
+
 minikube start \
-    --memory=8192 \
-    --cpus=4 \
+    --memory=$MINIKUBE_MEMORY \
+    --cpus=$MINIKUBE_CPUS \
     --disk-size=20GB \
     --kubernetes-version=v1.28.0 \
     --driver=docker
@@ -188,6 +191,17 @@ status:
     memoryUsagePercent: 30.0
     activeJobs: 0
 EOF
+
+# Label node for quantum pool scheduling
+echo "🏷️  Labeling minikube node..."
+kubectl label node minikube quantum.blocksq.io/pool=cpu --overwrite
+
+# Run database migrations
+echo "📊 Running database migrations..."
+kubectl wait --for=condition=available --timeout=60s deployment/postgres -n quantum-system
+POSTGRES_POD=$(kubectl get pods -n quantum-system -l app=postgres -o jsonpath='{.items[0].metadata.name}')
+kubectl cp deploy/migrations/001_init.sql quantum-system/$POSTGRES_POD:/tmp/001_init.sql
+kubectl exec -n quantum-system $POSTGRES_POD -- psql -U qsim -d qsim -f /tmp/001_init.sql
 
 echo "✅ Minikube setup completed!"
 echo ""

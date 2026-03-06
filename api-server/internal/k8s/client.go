@@ -145,6 +145,7 @@ func (c *Client) CreateQuantumJob(ctx context.Context, job *QuantumJob) error {
 				},
 			},
 			"spec": map[string]interface{}{
+				"userID":  job.UserID,
 				"circuit": map[string]interface{}{
 					"source":   job.Code,
 					"language": job.Language,
