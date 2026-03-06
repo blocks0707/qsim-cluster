@@ -179,23 +179,12 @@ func (r *QuantumJobReconciler) handleAnalyzingJob(ctx context.Context, job *quan
 		}
 	}
 
-	// Move to scheduling phase
-	job.Status.Phase = quantumv1alpha1.JobPhaseScheduling
-	r.addJobEvent(job, "Normal", "AnalysisCompleted",
-		fmt.Sprintf("Circuit analysis complete: %d qubits, depth %d, method %s",
-			job.Spec.Complexity.Qubits, job.Spec.Complexity.Depth, job.Spec.Complexity.Method))
+	// Save complexity info for status update message
+	qubits := job.Spec.Complexity.Qubits
+	depth := job.Spec.Complexity.Depth
+	method := job.Spec.Complexity.Method
 
-	// Set analyzed condition
-	now := metav1.NewTime(time.Now())
-	condition := metav1.Condition{
-		Type:               "Analyzed",
-		Status:             metav1.ConditionTrue,
-		LastTransitionTime: now,
-		Reason:             "AnalysisCompleted",
-		Message:            "Circuit complexity analysis completed successfully",
-	}
-	r.setJobCondition(&job.Status.Conditions, condition)
-
+	// Step 1: Update spec (complexity + resources)
 	if err := r.Update(ctx, job); err != nil {
 		if errors.IsConflict(err) {
 			logger.Info("Conflict updating job spec, requeueing")
@@ -205,11 +194,27 @@ func (r *QuantumJobReconciler) handleAnalyzingJob(ctx context.Context, job *quan
 		return ctrl.Result{}, err
 	}
 
-	// Re-fetch the job after spec update to get the latest resourceVersion
+	// Step 2: Re-fetch to get latest resourceVersion after spec update
 	if err := r.Get(ctx, types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, job); err != nil {
 		logger.Error(err, "Failed to re-fetch job after spec update")
 		return ctrl.Result{}, err
 	}
+
+	// Step 3: Now apply status changes on the fresh object
+	job.Status.Phase = quantumv1alpha1.JobPhaseScheduling
+	r.addJobEvent(job, "Normal", "AnalysisCompleted",
+		fmt.Sprintf("Circuit analysis complete: %d qubits, depth %d, method %s",
+			qubits, depth, method))
+
+	now := metav1.NewTime(time.Now())
+	condition := metav1.Condition{
+		Type:               "Analyzed",
+		Status:             metav1.ConditionTrue,
+		LastTransitionTime: now,
+		Reason:             "AnalysisCompleted",
+		Message:            "Circuit complexity analysis completed successfully",
+	}
+	r.setJobCondition(&job.Status.Conditions, condition)
 
 	if requeue, err := r.updateStatus(ctx, job); err != nil {
 		logger.Error(err, "Failed to update job status")
