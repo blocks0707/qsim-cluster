@@ -9,14 +9,27 @@ export interface ClusterStatus {
   pendingJobs: number;
 }
 
+export type NodePool = "cpu" | "gpu" | "high-memory";
+
 export interface Node {
   id: string;
   name: string;
   status: "ready" | "busy" | "offline" | "error";
+  pool: NodePool;
   qubits: number;
   backend: string;
   currentJob?: string;
+  activeJobs: number;
+  labels: Record<string, string>;
   metrics?: NodeMetrics;
+  gpu?: GpuInfo;
+}
+
+export interface GpuInfo {
+  type: string;
+  usage: number;
+  memoryTotal: number;
+  memoryUsed: number;
 }
 
 export interface NodeMetrics {
