@@ -83,6 +83,47 @@ func runServer(cmd *cobra.Command, args []string) {
 	// Initialize analyzer client
 	analyzerClient := initAnalyzerClient(logger)
 
+	// Initialize K8s→DB status syncer
+	syncer := k8s.NewSyncer(k8sClient, func(update *k8s.JobStatusUpdate) {
+		dbStatus := k8s.MapPhaseToDBStatus(update.Phase)
+		logger.Info("Syncing job status to DB",
+			zap.String("job_id", update.JobID),
+			zap.String("phase", update.Phase),
+			zap.String("db_status", dbStatus),
+		)
+
+		// Update status — use empty userID to skip user check
+		if err := stores.Jobs.UpdateStatusByID(update.JobID, dbStatus); err != nil {
+			logger.Error("Failed to sync job status", zap.String("job_id", update.JobID), zap.Error(err))
+		}
+
+		// Update assignment if present
+		if update.AssignedNode != "" {
+			if err := stores.Jobs.UpdateAssignment(update.JobID, update.AssignedNode, update.AssignedPool); err != nil {
+				logger.Error("Failed to sync job assignment", zap.String("job_id", update.JobID), zap.Error(err))
+			}
+		}
+
+		// Update execution details on completion
+		if update.Phase == "Succeeded" || update.Phase == "Failed" {
+			var execMs *int64
+			if update.ExecutionTime != nil {
+				ms := int64(*update.ExecutionTime)
+				execMs = &ms
+			}
+			resultRef := ""
+			if err := stores.Jobs.UpdateExecution(update.JobID, update.StartTime, update.CompletionTime, execMs, resultRef, update.ErrorMessage); err != nil {
+				logger.Error("Failed to sync job execution", zap.String("job_id", update.JobID), zap.Error(err))
+			}
+		}
+	}, logger)
+
+	go func() {
+		if err := syncer.Start(context.Background()); err != nil {
+			logger.Error("Failed to start K8s syncer", zap.Error(err))
+		}
+	}()
+
 	// Initialize API router
 	router := api.NewRouter(stores, k8sClient, analyzerClient, logger)
 

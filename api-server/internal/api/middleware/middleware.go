@@ -71,12 +71,23 @@ func CORS() gin.HandlerFunc {
 	}
 }
 
-// Auth middleware for JWT authentication (placeholder for future implementation)
+// Auth middleware for API key authentication
 func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// TODO: Implement JWT validation
-		// For now, just set a dummy user ID
-		c.Set("user_id", "user-123")
-		c.Next()
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.AbortWithStatusJSON(401, gin.H{"error": "Authorization header required"})
+			return
+		}
+
+		// TODO: Implement proper JWT/API key validation
+		// For now, accept any Bearer token and set a dummy user ID
+		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			c.Set("user_id", "user-123")
+			c.Next()
+			return
+		}
+
+		c.AbortWithStatusJSON(401, gin.H{"error": "Invalid authorization format"})
 	}
 }

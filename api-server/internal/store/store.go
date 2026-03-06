@@ -69,6 +69,7 @@ type JobStore interface {
 	GetByID(id string) (*Job, error)
 	List(params JobListParams) ([]*Job, int, error)
 	UpdateStatus(id, userID, status string) error
+	UpdateStatusByID(id, status string) error
 	UpdateComplexity(id string, qubits, depth, gateCount int, complexityClass, method string) error
 	UpdateAssignment(id, node, pool string) error
 	UpdateExecution(id string, startedAt, completedAt *time.Time, executionTimeMs *int64, resultRef, errorMessage string) error

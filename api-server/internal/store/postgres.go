@@ -165,6 +165,20 @@ func (s *PostgresJobStore) UpdateStatus(id, userID, status string) error {
 	return nil
 }
 
+// UpdateStatusByID updates job status by ID only (no user check, for K8s sync)
+func (s *PostgresJobStore) UpdateStatusByID(id, status string) error {
+	query := `UPDATE quantum_jobs SET status = $2, updated_at = $3 WHERE id = $1`
+	result, err := s.db.Exec(query, id, status, time.Now())
+	if err != nil {
+		return fmt.Errorf("failed to update job status: %w", err)
+	}
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // UpdateComplexity updates the complexity analysis results
 func (s *PostgresJobStore) UpdateComplexity(id string, qubits, depth, gateCount int, complexityClass, method string) error {
 	query := `
