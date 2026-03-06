@@ -29,10 +29,10 @@ const MOCK_JOBS: Job[] = [
 ];
 
 const MOCK_NODES: Node[] = [
-  { id: "n1", name: "node-0", status: "ready", qubits: 32, backend: "qsim", metrics: { cpuUsage: 45, memoryUsage: 62, gpuUsage: 30, uptime: 86400 } },
-  { id: "n2", name: "node-1", status: "busy", qubits: 32, backend: "qsim", metrics: { cpuUsage: 78, memoryUsage: 71, gpuUsage: 85, uptime: 86400 } },
-  { id: "n3", name: "node-2", status: "ready", qubits: 64, backend: "qsim-gpu", metrics: { cpuUsage: 22, memoryUsage: 40, gpuUsage: 15, uptime: 43200 } },
-  { id: "n4", name: "node-3", status: "offline", qubits: 32, backend: "qsim", metrics: { cpuUsage: 0, memoryUsage: 0, gpuUsage: 0, uptime: 0 } },
+  { id: "n1", name: "node-0", status: "ready", pool: "cpu", qubits: 32, backend: "qsim", activeJobs: 1, labels: {}, metrics: { cpuUsage: 45, memoryUsage: 62, gpuUsage: 30, uptime: 86400 } },
+  { id: "n2", name: "node-1", status: "busy", pool: "gpu", qubits: 32, backend: "qsim", activeJobs: 3, labels: {}, metrics: { cpuUsage: 78, memoryUsage: 71, gpuUsage: 85, uptime: 86400 } },
+  { id: "n3", name: "node-2", status: "ready", pool: "gpu", qubits: 64, backend: "qsim-gpu", activeJobs: 0, labels: {}, metrics: { cpuUsage: 22, memoryUsage: 40, gpuUsage: 15, uptime: 43200 } },
+  { id: "n4", name: "node-3", status: "offline", pool: "cpu", qubits: 32, backend: "qsim", activeJobs: 0, labels: {}, metrics: { cpuUsage: 0, memoryUsage: 0, gpuUsage: 0, uptime: 0 } },
 ];
 
 export default function OverviewPage() {
