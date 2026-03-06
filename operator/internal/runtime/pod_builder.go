@@ -137,9 +137,10 @@ func (pb *PodBuilder) buildSimulatorContainer(job *quantumv1alpha1.QuantumJob) (
 	}
 
 	container := corev1.Container{
-		Name:    "simulator",
-		Image:   SimulatorImage,
-		Command: []string{"python", "/runner/execute.py"},
+		Name:            "simulator",
+		Image:           SimulatorImage,
+		ImagePullPolicy: corev1.PullIfNotPresent,
+		Command:         []string{"python", "/app/execute.py"},
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      CodeVolumeName,
@@ -181,8 +182,9 @@ func (pb *PodBuilder) buildSimulatorContainer(job *quantumv1alpha1.QuantumJob) (
 // buildResultCollectorContainer creates the result collector sidecar
 func (pb *PodBuilder) buildResultCollectorContainer(job *quantumv1alpha1.QuantumJob) corev1.Container {
 	return corev1.Container{
-		Name:  "result-collector",
-		Image: ResultCollectorImage,
+		Name:            "result-collector",
+		Image:           ResultCollectorImage,
+		ImagePullPolicy: corev1.PullIfNotPresent,
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      ResultVolumeName,

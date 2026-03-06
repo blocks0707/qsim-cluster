@@ -131,7 +131,7 @@ class QuantumExecutor:
         import qiskit
         from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
         from qiskit_aer import AerSimulator
-        from qiskit.circuit.library import *
+        import qiskit.circuit.library as circuit_library
         import numpy as np
         
         return {
@@ -143,12 +143,13 @@ class QuantumExecutor:
             'ClassicalRegister': ClassicalRegister,
             'AerSimulator': AerSimulator,
             # Circuit library
-            'HGate': HGate,
-            'XGate': XGate,
-            'YGate': YGate,
-            'ZGate': ZGate,
-            'CXGate': CXGate,
-            'CZGate': CZGate,
+            'circuit_library': circuit_library,
+            'HGate': circuit_library.HGate,
+            'XGate': circuit_library.XGate,
+            'YGate': circuit_library.YGate,
+            'ZGate': circuit_library.ZGate,
+            'CXGate': circuit_library.CXGate,
+            'CZGate': circuit_library.CZGate,
             # Numpy
             'numpy': np,
             'np': np,

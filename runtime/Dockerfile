@@ -16,8 +16,6 @@ COPY requirements.txt .
 # Install Python dependencies
 # Install in separate steps for better layer caching
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-RUN pip install --no-cache-dir numpy
-RUN pip install --no-cache-dir qiskit qiskit-aer
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code

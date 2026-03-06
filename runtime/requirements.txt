@@ -1,4 +1,4 @@
-qiskit==0.45.1
-qiskit-aer==0.13.1
-numpy==1.26.2
-structlog==23.2.0
+qiskit>=1.0.0
+qiskit-aer>=0.14.0
+numpy>=1.26.0
+structlog>=23.2.0
